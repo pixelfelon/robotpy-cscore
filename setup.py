@@ -112,7 +112,8 @@ def cpp_flag(compiler):
 class BuildExt(build_ext):
     """A custom build extension for adding compiler-specific options."""
 
-    c_opts = {"msvc": ["/EHsc", "/DNOMINMAX"], "unix": []}
+    c_opts = {"msvc": ["/EHsc", "/DNOMINMAX", "/DEBUG:NONE"], "unix": []}
+    l_opts = {"msvc": ['/LIBPATH:C:\\Program Files\\OpenCV\\x64\\vc15\\lib', 'AdvAPI32.lib', 'Psapi.lib', 'UserEnv.lib'], "unix": []}
 
     if sys.platform == "darwin":
         c_opts["unix"] += ["-stdlib=libc++", "-mmacosx-version-min=10.7"]
@@ -120,6 +121,7 @@ class BuildExt(build_ext):
     def build_extensions(self):
         ct = self.compiler.compiler_type
         opts = self.c_opts.get(ct, [])
+        lopts = self.l_opts.get(ct, [])
         if ct == "unix":
             opts.append('-DVERSION_INFO="%s"' % self.distribution.get_version())
             # TODO: this feels like a hack
@@ -137,6 +139,7 @@ class BuildExt(build_ext):
             opts.append('/DVERSION_INFO=\\"%s\\"' % self.distribution.get_version())
         for ext in self.extensions:
             ext.extra_compile_args = opts
+            ext.extra_link_args = lopts
         build_ext.build_extensions(self)
 
 
@@ -231,7 +234,7 @@ ext_modules = [
             get_numpy_include(),
         ],
         libraries=[
-            get_opencv_lib(name) for name in ("core", "highgui", "imgproc", "imgcodecs")
+            get_opencv_lib("world")
         ],
         language="c++",
     )
